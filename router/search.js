@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-
 const Store = require("../models/store");
 const Review = require("../models/review");
 const Hashtag = require("../models/hashtag");
@@ -14,6 +13,7 @@ const { isLoggedIn } = require("./middlewares");
 router.post("/hashtagsearch", async (req, res, next) => {
   try {
     const { latitude, longitude, selectedHashtag } = req.body;
+    console.log(req.body);
     const hashtagStore = await Promise.all(
       selectedHashtag.map((hashtagName) => {
         return Store.findAll({

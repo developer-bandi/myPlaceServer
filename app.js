@@ -23,7 +23,6 @@ dotenv.config();
 const redisClient = redis.createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
   password: process.env.REDIS_PASSWORD,
-  legacyMode: true,
 });
 
 const app = express();
@@ -51,21 +50,22 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
-app.use(
-  session({
-    resave: false,
-    saveUninitialized: false,
-    secret: process.env.COOKIE_SECRET,
-    cookie: {
-      httpOnly: true,
-      secure: false,
-    },
-    store: new RedisStore({ client: redisClient }),
-  })
-);
-
-app.use(passport.initialize());
-app.use(passport.session());
+redisClient.connect().then(() => {
+  app.use(
+    session({
+      resave: false,
+      saveUninitialized: false,
+      secret: process.env.COOKIE_SECRET,
+      cookie: {
+        httpOnly: true,
+        secure: false,
+      },
+      store: new RedisStore({ client: redisClient }),
+    })
+  );
+  app.use(passport.initialize());
+  app.use(passport.session());
+});
 
 app.use("/hashtag", hashtagRouter);
 app.use("/auth", authRouter);
@@ -83,7 +83,8 @@ app.use((req, res, next) => {
 
 app.use((err, req, res, next) => {
   res.status(err.status || 500);
-  res.send("error");
+  console.error(err);
+  return res.send(err);
 });
 
 app.listen(app.get("port"), () => {
