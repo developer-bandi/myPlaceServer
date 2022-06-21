@@ -20,6 +20,6 @@ module.exports = {
     password: process.env.SEQULIZE_PASSWORD,
     database: "glkpfi3s9npnyqgz",
     host: "cxmgkzhk95kfgbq4.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
-    dialect: "mysql",
+    dialect: "mariadb",
   },
 };

@@ -7,7 +7,6 @@ const Post = require("./post");
 const Review = require("./review");
 const Store = require("./store");
 const User = require("./user");
-const Storehashtag = require("./storehashtag");
 
 const db = {};
 const sequelize = new Sequelize(
@@ -25,7 +24,6 @@ db.Post = Post;
 db.Review = Review;
 db.Store = Store;
 db.User = User;
-db.Storehahstag = Storehashtag;
 
 Comment.init(sequelize);
 Hashtag.init(sequelize);
@@ -34,7 +32,6 @@ Post.init(sequelize);
 Review.init(sequelize);
 Store.init(sequelize);
 User.init(sequelize);
-Storehashtag.init(sequelize);
 
 Comment.associate(db);
 Hashtag.associate(db);
@@ -42,7 +39,5 @@ Photo.associate(db);
 Post.associate(db);
 Review.associate(db);
 Store.associate(db);
-User.associate(db);
-Storehashtag.associate(db);
 
 module.exports = db;

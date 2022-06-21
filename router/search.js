@@ -19,7 +19,7 @@ router.post("/hashtagsearch", async (req, res, next) => {
         return Store.findAll({
           attributes: ["id"],
           where: {
-            "$reviews.hashtags.name$": hashtagName,
+            "$Reviews.Hashtags.name$": hashtagName,
           },
           include: [
             {

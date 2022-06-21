@@ -14,7 +14,6 @@ const searchRouter = require("./router/search");
 const contributeRouter = require("./router/contribute");
 const postRouter = require("./router/post");
 const mypageRouter = require("./router/mypage");
-const logger = require("./lib/logger");
 const helmet = require("helmet");
 const hpp = require("hpp");
 const redis = require("redis");
@@ -24,7 +23,6 @@ const redisClient = redis.createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
   password: process.env.REDIS_PASSWORD,
 });
-
 const app = express();
 passportConfig();
 app.set("port", process.env.PORT || 8001);
@@ -39,33 +37,26 @@ sequelize
   });
 
 app.use(cors({ credentials: true, origin: process.env.FRONT_URL }));
-if (process.env.NODE_ENV === "production") {
-  app.use(morgan("combined"));
-  app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(hpp());
-} else {
-  app.use(morgan("dev"));
-}
+app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
-redisClient.connect().then(() => {
-  app.use(
-    session({
-      resave: false,
-      saveUninitialized: false,
-      secret: process.env.COOKIE_SECRET,
-      cookie: {
-        httpOnly: true,
-        secure: false,
-      },
-      store: new RedisStore({ client: redisClient }),
-    })
-  );
-  app.use(passport.initialize());
-  app.use(passport.session());
-});
+
+app.use(
+  session({
+    resave: false,
+    saveUninitialized: false,
+    secret: process.env.COOKIE_SECRET,
+    cookie: {
+      httpOnly: true,
+      secure: false,
+    },
+    store: new RedisStore({ client: redisClient }),
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use("/hashtag", hashtagRouter);
 app.use("/auth", authRouter);
@@ -76,8 +67,6 @@ app.use("/mypage", mypageRouter);
 app.use((req, res, next) => {
   const error = new Error(`${req.method}${req.url}라우터가 없습니다`);
   error.stauts = 404;
-  logger.info("info");
-  logger.error(error.message);
   next(error);
 });
 
