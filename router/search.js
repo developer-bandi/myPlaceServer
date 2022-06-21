@@ -11,7 +11,7 @@ const { Op } = require("sequelize");
 const getDistance = require("../lib/distance");
 const { isLoggedIn } = require("./middlewares");
 
-router.post("/hashtagsearch", async (req, res) => {
+router.post("/hashtagsearch", async (req, res, next) => {
   try {
     const { latitude, longitude, selectedHashtag } = req.body;
     const hashtagStore = await Promise.all(
