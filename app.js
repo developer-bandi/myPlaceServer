@@ -23,6 +23,7 @@ const redisClient = redis.createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
   password: process.env.REDIS_PASSWORD,
 });
+
 const app = express();
 passportConfig();
 app.set("port", process.env.PORT || 8001);
@@ -37,7 +38,9 @@ sequelize
   });
 
 app.use(cors({ credentials: true, origin: process.env.FRONT_URL }));
-app.use(morgan("dev"));
+app.use(morgan("combin"));
+app.use(hpp());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -48,9 +51,11 @@ app.use(
     resave: false,
     saveUninitialized: false,
     secret: process.env.COOKIE_SECRET,
+    proxy: true,
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: true,
+      sameSite: false,
     },
     store: new RedisStore({ client: redisClient }),
   })
