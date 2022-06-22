@@ -55,7 +55,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: true,
-      sameSite: false,
+      sameSite: "none",
     },
     store: new RedisStore({ client: redisClient }),
   })
