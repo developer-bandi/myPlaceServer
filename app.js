@@ -39,8 +39,7 @@ sequelize
   });
 
 app.use(cors({ credentials: true, origin: process.env.FRONT_URL }));
-app.use(morgan("combin"));
-app.use(hpp());
+app.use(morgan("dev"));
 app.use(
   helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false })
 );
@@ -57,10 +56,8 @@ app.use(
     proxy: true,
     cookie: {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: false,
     },
-    store: new RedisStore({ client: redisClient }),
   })
 );
 app.use(passport.initialize());

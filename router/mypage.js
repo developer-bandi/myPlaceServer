@@ -10,6 +10,7 @@ const Post = require("../models/post");
 const Comment = require("../models/comment");
 const sanitizeHtml = require("sanitize-html");
 const cloudinary = require("cloudinary").v2;
+
 router.get("/bookmark", isLoggedIn, async (req, res, next) => {
   try {
     const { id } = req.user.dataValues;

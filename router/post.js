@@ -191,7 +191,7 @@ router.delete("/detail", isLoggedIn, async (req, res, next) => {
   const { id } = req.user.dataValues;
   try {
     if (id === UserId) {
-      const post = Post.findOne({
+      const post = await Post.findOne({
         where: { id: PostId },
         include: [
           {
@@ -200,23 +200,24 @@ router.delete("/detail", isLoggedIn, async (req, res, next) => {
           },
         ],
       });
+      console.log(post);
       post.dataValues.Photos.map((filename) => {
         cloudinary.uploader.destroy(
           filename.dataValues.filename,
           function (result) {
             console.log(result);
+            Post.destroy({
+              where: { id: PostId },
+            });
+            return res.send("ok");
           }
         );
       });
-      await Post.destroy({
-        where: { id: PostId },
-      });
     }
-    return res.send("ok");
-  } catch (err) {
+  } catch (error) {
     console.error(error);
     res.status(403);
-    return next(err);
+    return next(error);
   }
 });
 
@@ -282,7 +283,7 @@ router.post(
         content: sanitizeHtml(content),
         UserId: id,
       });
-      console.log(req.file);
+      console.log(req.files);
       await Promise.all(
         req.files.map((file) => {
           return Photo.create({

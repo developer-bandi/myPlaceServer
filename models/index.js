@@ -39,5 +39,6 @@ Photo.associate(db);
 Post.associate(db);
 Review.associate(db);
 Store.associate(db);
+User.associate(db);
 
 module.exports = db;
