@@ -19,6 +19,7 @@ const hpp = require("hpp");
 const redis = require("redis");
 const RedisStore = require("connect-redis")(session);
 const cloudinary = require("cloudinary").v2;
+
 dotenv.config();
 const redisClient = redis.createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
@@ -39,7 +40,8 @@ sequelize
   });
 
 app.use(cors({ credentials: true, origin: process.env.FRONT_URL }));
-app.use(morgan("dev"));
+app.use(morgan("combin"));
+app.use(hpp());
 app.use(
   helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false })
 );
@@ -56,8 +58,10 @@ app.use(
     proxy: true,
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: true,
+      sameSite: "none",
     },
+    store: new RedisStore({ client: redisClient }),
   })
 );
 app.use(passport.initialize());
