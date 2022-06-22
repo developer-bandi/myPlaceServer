@@ -40,7 +40,9 @@ sequelize
 app.use(cors({ credentials: true, origin: process.env.FRONT_URL }));
 app.use(morgan("combin"));
 app.use(hpp());
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(
+  helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false })
+);
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
