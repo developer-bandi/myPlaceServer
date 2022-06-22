@@ -18,6 +18,7 @@ const helmet = require("helmet");
 const hpp = require("hpp");
 const redis = require("redis");
 const RedisStore = require("connect-redis")(session);
+const cloudinary = require("cloudinary").v2;
 dotenv.config();
 const redisClient = redis.createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
@@ -64,6 +65,12 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
+
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
 
 app.use("/hashtag", hashtagRouter);
 app.use("/auth", authRouter);

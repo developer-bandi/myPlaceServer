@@ -9,6 +9,7 @@ const Photo = require("../models/photo");
 const Post = require("../models/post");
 const Comment = require("../models/comment");
 const sanitizeHtml = require("sanitize-html");
+const cloudinary = require("cloudinary").v2;
 router.get("/bookmark", isLoggedIn, async (req, res, next) => {
   try {
     const { id } = req.user.dataValues;
@@ -85,6 +86,24 @@ router.get("/reviews", isLoggedIn, async (req, res, next) => {
 router.delete("/review", isLoggedIn, async (req, res, next) => {
   try {
     const { id } = req.body;
+    const photos = await Review.findOne({
+      where: { id },
+      include: [
+        {
+          model: Photo,
+          attributes: ["filename"],
+        },
+      ],
+    });
+    photos.dataValues.Photos.map((filename) => {
+      cloudinary.uploader.destroy(
+        filename.dataValues.filename,
+        function (result) {
+          console.log(result);
+        }
+      );
+    });
+
     await Review.destroy({
       where: { id },
     });

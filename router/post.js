@@ -9,6 +9,7 @@ const { Op } = require("sequelize");
 const { isLoggedIn, isNotLoggedIn } = require("./middlewares");
 const db = require("../models/index");
 const sanitizeHtml = require("sanitize-html");
+const cloudinary = require("cloudinary").v2;
 
 router.get("/list", async (req, res, next) => {
   try {
@@ -190,6 +191,23 @@ router.delete("/detail", isLoggedIn, async (req, res, next) => {
   const { id } = req.user.dataValues;
   try {
     if (id === UserId) {
+      const post = Post.findOne({
+        where: { id: PostId },
+        include: [
+          {
+            model: Photo,
+            attributes: ["filename"],
+          },
+        ],
+      });
+      post.dataValues.Photos.map((filename) => {
+        cloudinary.uploader.destroy(
+          filename.dataValues.filename,
+          function (result) {
+            console.log(result);
+          }
+        );
+      });
       await Post.destroy({
         where: { id: PostId },
       });
@@ -264,7 +282,7 @@ router.post(
         content: sanitizeHtml(content),
         UserId: id,
       });
-
+      console.log(req.file);
       await Promise.all(
         req.files.map((file) => {
           return Photo.create({

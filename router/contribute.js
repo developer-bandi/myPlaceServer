@@ -9,6 +9,7 @@ const Hashtag = require("../models/hashtag");
 const db = require("../models/index");
 const fs = require("fs").promises;
 const sanitizeHtml = require("sanitize-html");
+const cloudinary = require("cloudinary").v2;
 
 router.post(
   "/writereview",
@@ -134,12 +135,12 @@ router.patch(
               });
             })
           )
-          .concat(
-            deletedImg.map((file) => {
-              return fs.unlink(`public/imgs/${file}`);
-            })
-          )
       );
+      deletedImg.map((filename) => {
+        cloudinary.uploader.destroy(filename, function (result) {
+          console.log(result);
+        });
+      });
 
       return res.send("ok");
     } catch (error) {
@@ -226,11 +227,6 @@ router.patch(
             })
           )
           .concat(
-            deleteImg.map((file) => {
-              return fs.unlink(`public/imgs/${file}`);
-            })
-          )
-          .concat(
             deleteHashtagId.map((HashtagId) => {
               return db.sequelize.models.ReviewHashtag.destroy({
                 where: {
@@ -247,6 +243,11 @@ router.patch(
             ),
           ])
       );
+      deleteImg.map((filename) => {
+        cloudinary.uploader.destroy(filename, function (result) {
+          console.log(result);
+        });
+      });
       return res.send("ok");
     } catch (error) {
       console.error(error);
