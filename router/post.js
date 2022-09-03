@@ -6,11 +6,7 @@ const User = require("../models/user");
 const Comment = require("../models/comment");
 const Photo = require("../models/photo");
 const {Op} = require("sequelize");
-<<<<<<< HEAD
 const {isLoggedIn} = require("./middlewares");
-=======
-const {isLoggedIn, isNotLoggedIn} = require("./middlewares");
->>>>>>> cee8caef4298758ab313d0b217f917b302d84815
 const db = require("../models/index");
 const sanitizeHtml = require("sanitize-html");
 const cloudinary = require("cloudinary").v2;
