@@ -6,7 +6,7 @@ const session = require("express-session");
 const dotenv = require("dotenv");
 const passport = require("passport");
 const cors = require("cors");
-const { sequelize } = require("./models");
+const {sequelize} = require("./models");
 const passportConfig = require("./passport");
 const hashtagRouter = require("./router/hashtag");
 const authRouter = require("./router/auth");
@@ -14,6 +14,7 @@ const searchRouter = require("./router/search");
 const contributeRouter = require("./router/contribute");
 const postRouter = require("./router/post");
 const mypageRouter = require("./router/mypage");
+const homeRouter = require("./router/home");
 const helmet = require("helmet");
 const hpp = require("hpp");
 const redis = require("redis");
@@ -31,7 +32,7 @@ passportConfig();
 app.set("port", process.env.PORT || 8001);
 
 sequelize
-  .sync({ force: false })
+  .sync({force: false})
   .then(() => {
     console.log("데이터베이스 연결 성공");
   })
@@ -39,15 +40,15 @@ sequelize
     console.error(error);
   });
 
-app.use(cors({ credentials: true, origin: process.env.FRONT_URL }));
+app.use(cors({credentials: true, origin: process.env.FRONT_URL}));
 app.use(morgan("combin"));
 app.use(hpp());
 app.use(
-  helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false })
+  helmet({contentSecurityPolicy: false, crossOriginResourcePolicy: false})
 );
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({extended: false}));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use(
@@ -56,12 +57,15 @@ app.use(
     saveUninitialized: false,
     secret: process.env.COOKIE_SECRET,
     proxy: true,
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    },
-    store: new RedisStore({ client: redisClient }),
+    cookie:
+      process.env.NODE_ENV === "production"
+        ? {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+          }
+        : {httpOnly: true, secure: false},
+    store: new RedisStore({client: redisClient}),
   })
 );
 app.use(passport.initialize());
@@ -79,6 +83,7 @@ app.use("/search", searchRouter);
 app.use("/contribute", contributeRouter);
 app.use("/post", postRouter);
 app.use("/mypage", mypageRouter);
+app.use("/home", homeRouter);
 app.use((req, res, next) => {
   const error = new Error(`${req.method}${req.url}라우터가 없습니다`);
   error.stauts = 404;

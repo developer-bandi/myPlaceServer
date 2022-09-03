@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { isLoggedIn } = require("./middlewares");
+const {isLoggedIn} = require("./middlewares");
 const User = require("../models/user");
 const Store = require("../models/store");
 const Review = require("../models/review");
@@ -9,35 +9,66 @@ const Photo = require("../models/photo");
 const Post = require("../models/post");
 const Comment = require("../models/comment");
 const sanitizeHtml = require("sanitize-html");
+const db = require("../models");
+const {Op, Sequelize} = require("sequelize");
+const sequelize = require("sequelize");
 const cloudinary = require("cloudinary").v2;
 
-router.get("/bookmark", isLoggedIn, async (req, res, next) => {
+router.get("/bookmark", async (req, res, next) => {
   try {
-    const { id } = req.user.dataValues;
-    const bookMarkList = await User.findOne({
-      where: { id },
-      attributes: ["id"],
+    const {id} = {id: 1};
+    const {page} = req.query;
+    let bookMarkList = await db.sequelize.models.bookMark.findAndCountAll({
+      where: {UserId: id},
+      attributes: ["StoreId"],
+      order: [["createdAt", "DESC"]],
+      limit: 24,
+      offset: (page - 1) * 24,
+    });
+
+    bookMarkList.rows = bookMarkList.rows.map((data) => {
+      return data.dataValues.StoreId;
+    });
+
+    const bookMarkDataList = await Store.findAll({
+      where: {id: {[Op.or]: bookMarkList.rows}},
       include: [
         {
-          model: Store,
-          as: "userbookMark",
+          model: Photo,
+        },
+        {
+          model: User,
+          as: "storebookMark",
+        },
+        {
+          model: Review,
         },
       ],
     });
-    return res.send(
-      bookMarkList.dataValues.userbookMark.map((bookmark) => {
-        const { id, name, category, address, latitude, longitude } =
-          bookmark.dataValues;
-        return {
-          id,
-          name,
-          category,
-          address,
-          latitude,
-          longitude,
-        };
-      })
-    );
+
+    bookMarkDataList.map((bookmark) => {
+      const {id, name, category, address, latitude, longitude, viewCount} =
+        bookmark.dataValues;
+      bookMarkList.rows[bookMarkList.rows.indexOf(id)] = {
+        id,
+        name,
+        category,
+        address,
+        latitude,
+        longitude,
+        viewCount,
+        photo: bookmark.dataValues.Photos.filter((photo) => {
+          if (photo.dataValues.rep === 1) {
+            return true;
+          }
+          return false;
+        })[0]?.dataValues.filename,
+        bookmark: bookmark.dataValues.storebookMark.length,
+        review: bookmark.dataValues.Reviews.length,
+      };
+    });
+
+    return res.send(bookMarkList);
   } catch (error) {
     console.error(error);
     res.status(403);
@@ -45,25 +76,42 @@ router.get("/bookmark", isLoggedIn, async (req, res, next) => {
   }
 });
 
-router.get("/reviews", isLoggedIn, async (req, res, next) => {
+router.get("/reviews", async (req, res, next) => {
   try {
-    const { id } = req.user.dataValues;
+    const {id} = {id: 1};
+    const {page} = req.query;
+    const listLength = await User.findAll({
+      where: {id},
+      attributes: [],
+      include: [
+        {
+          model: Review,
+          attributes: [[sequelize.fn("COUNT", "id"), "count"]],
+        },
+      ],
+    });
     const reviewList = await User.findOne({
-      where: { id },
+      where: {id},
       attributes: ["id"],
       include: [
         {
           model: Review,
           include: [
-            { model: Hashtag, attributes: ["id", "name"] },
-            { model: Photo, attributes: ["filename"] },
-            { model: Store, attributes: ["name"] },
+            {model: Hashtag, attributes: ["id", "name"]},
+            {model: Photo, attributes: ["filename"]},
+            {model: Store, attributes: ["name"]},
           ],
         },
       ],
+      order: [[Review, "createdAt", "DESC"]],
+      limit: 20,
+      offset: (page - 1) * 20,
+      subQuery: false,
     });
-    return res.send(
-      reviewList.dataValues.Reviews.map((review) => {
+    console.log(reviewList);
+    return res.send({
+      count: listLength[0].dataValues.Reviews[0].dataValues.count,
+      rows: reviewList.Reviews.map((review) => {
         return {
           id: review.dataValues.id,
           content: review.dataValues.content,
@@ -74,9 +122,10 @@ router.get("/reviews", isLoggedIn, async (req, res, next) => {
           photo: review.dataValues.Photos.map((filename) => {
             return filename.dataValues.filename;
           }),
+          createdAt: review.dataValues.createdAt,
         };
-      })
-    );
+      }),
+    });
   } catch (error) {
     console.error(error);
     res.status(403);
@@ -86,9 +135,9 @@ router.get("/reviews", isLoggedIn, async (req, res, next) => {
 
 router.delete("/review", isLoggedIn, async (req, res, next) => {
   try {
-    const { id } = req.body;
+    const {id} = req.body;
     const photos = await Review.findOne({
-      where: { id },
+      where: {id},
       include: [
         {
           model: Photo,
@@ -106,7 +155,7 @@ router.delete("/review", isLoggedIn, async (req, res, next) => {
     });
 
     await Review.destroy({
-      where: { id },
+      where: {id},
     });
     return res.send("ok");
   } catch (error) {
@@ -118,13 +167,14 @@ router.delete("/review", isLoggedIn, async (req, res, next) => {
 
 router.get("/review", isLoggedIn, async (req, res, next) => {
   try {
-    const { id } = req.query;
+    const {id} = req.query;
+    console.log(id);
     const review = await Review.findOne({
-      where: { id },
+      where: {id},
       include: [
-        { model: Hashtag, attributes: ["id", "name"] },
-        { model: Photo, attributes: ["filename"] },
-        { model: Store, attributes: ["name", "category"] },
+        {model: Hashtag, attributes: ["id", "name"]},
+        {model: Photo, attributes: ["filename"]},
+        {model: Store, attributes: ["name", "category", "address"]},
       ],
     });
     return res.send({
@@ -133,6 +183,7 @@ router.get("/review", isLoggedIn, async (req, res, next) => {
       storeInfo: {
         name: review.dataValues.Store.dataValues.name,
         category: review.dataValues.Store.dataValues.category,
+        address: review.dataValues.Store.dataValues.address,
       },
       Hashtags: review.dataValues.Hashtags.map((hashtag) => {
         return hashtag.dataValues.name;
@@ -148,22 +199,44 @@ router.get("/review", isLoggedIn, async (req, res, next) => {
   }
 });
 
-router.get("/post", isLoggedIn, async (req, res, next) => {
+router.get("/post", async (req, res, next) => {
   try {
-    const { id } = req.user.dataValues;
-    const postList = await Post.findAll({
-      where: { UserId: id },
+    const {id} = {id: 1};
+    const {page} = req.query;
+    const {count, rows} = await Post.findAndCountAll({
+      where: {UserId: id},
+      order: [["createdAt", "DESC"]],
+      limit: 20,
+      offset: (page - 1) * 20,
+      distinct: true,
       include: [
         {
           model: User,
           as: "postlikecount",
           attributes: ["id"],
         },
-        { model: Comment },
+        {
+          model: User,
+          attributes: ["nickname"],
+        },
+        {model: Comment},
       ],
     });
-
-    return res.send(postList);
+    return res.send({
+      count,
+      rows: rows.map((post) => {
+        return {
+          id: post.dataValues.id,
+          title: post.dataValues.title,
+          content: post.dataValues.content,
+          nickname: post.dataValues.User.dataValues.nickname,
+          createdAt: post.dataValues.createdAt,
+          viewCount: post.dataValues.viewCount,
+          postlikecount: post.dataValues.postlikecount.length,
+          comment: post.dataValues.Comments.length,
+        };
+      }),
+    });
   } catch (error) {
     console.error(error);
     res.status(403);
@@ -171,20 +244,38 @@ router.get("/post", isLoggedIn, async (req, res, next) => {
   }
 });
 
-router.get("/comment", isLoggedIn, async (req, res, next) => {
+router.get("/comment", async (req, res, next) => {
   try {
-    const id = 1;
-    const commentList = await Comment.findAll({
-      where: { UserId: id },
+    const {id} = {id: 1};
+    const {page} = req.query;
+    const commentList = await Comment.findAndCountAll({
+      where: {UserId: id},
+      order: [["createdAt", "DESC"]],
+      limit: 20,
+      offset: (page - 1) * 20,
+      distinct: true,
+      attributes: ["id", "content", "createdAt", "PostId"],
       include: [
         {
-          model: Post,
-          attributes: ["id"],
+          model: User,
+          attributes: ["nickname"],
         },
       ],
     });
-
-    return res.send(commentList);
+    console.log(commentList);
+    console.log(commentList.rows[0].User);
+    return res.send({
+      count: commentList.count,
+      rows: commentList.rows.map((comment) => {
+        return {
+          id: comment.dataValues.id,
+          content: comment.dataValues.content,
+          createdAt: comment.dataValues.createdAt,
+          PostId: comment.dataValues.PostId,
+          nickname: comment.User.dataValues.nickname,
+        };
+      }),
+    });
   } catch (error) {
     console.error(error);
     res.status(403);
@@ -194,9 +285,9 @@ router.get("/comment", isLoggedIn, async (req, res, next) => {
 
 router.get("/info", isLoggedIn, async (req, res, next) => {
   try {
-    const id = 1;
+    const {id} = req.user.dataValues;
     const userInfo = await User.findOne({
-      where: { id },
+      where: {id},
       attributes: ["localId", "nickname", "provider", "createdAt", "email"],
     });
     return res.send(userInfo);
@@ -210,12 +301,12 @@ router.get("/info", isLoggedIn, async (req, res, next) => {
 router.patch("/nickname", isLoggedIn, async (req, res, next) => {
   try {
     const nickname = sanitizeHtml(req.body.nickname);
-    const id = 1;
+    const {id} = req.user.dataValues;
     const newUserInfo = await User.update(
       {
         nickname,
       },
-      { where: { id } }
+      {where: {id}}
     );
     return res.send(newUserInfo);
   } catch (error) {
