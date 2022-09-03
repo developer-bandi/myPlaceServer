@@ -5,7 +5,7 @@ module.exports = class Review extends Sequelize.Model {
     return super.init(
       {
         content: {
-          type: Sequelize.STRING(200),
+          type: Sequelize.STRING(2000),
           allowNull: false,
         },
       },
@@ -22,7 +22,7 @@ module.exports = class Review extends Sequelize.Model {
     );
   }
   static associate(db) {
-    db.Review.belongsToMany(db.Hashtag, { through: "ReviewHashtag" });
+    db.Review.belongsToMany(db.Hashtag, {through: "ReviewHashtag"});
     db.Review.belongsTo(db.Store);
     db.Review.belongsTo(db.User);
     db.Review.hasMany(db.Photo);
