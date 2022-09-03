@@ -8,6 +8,11 @@ module.exports = class Photo extends Sequelize.Model {
           type: Sequelize.STRING(200),
           allowNull: false,
         },
+        rep: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+          defaultValue: 0,
+        },
       },
       {
         sequelize,

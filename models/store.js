@@ -24,6 +24,7 @@ module.exports = class Store extends Sequelize.Model {
           type: Sequelize.STRING(20),
           allowNull: false,
         },
+
         latitude: {
           type: Sequelize.STRING(30),
           allowNull: false,
@@ -31,6 +32,11 @@ module.exports = class Store extends Sequelize.Model {
         longitude: {
           type: Sequelize.STRING(30),
           allowNull: false,
+        },
+        viewCount: {
+          type: Sequelize.INTEGER.UNSIGNED,
+          allowNull: false,
+          defaultValue: 0,
         },
       },
       {
