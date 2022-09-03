@@ -10,13 +10,21 @@ const Post = require("../models/post");
 const Comment = require("../models/comment");
 const sanitizeHtml = require("sanitize-html");
 const db = require("../models");
+<<<<<<< HEAD
 const {Op} = require("sequelize");
+=======
+const {Op, Sequelize} = require("sequelize");
+>>>>>>> cee8caef4298758ab313d0b217f917b302d84815
 const sequelize = require("sequelize");
 const cloudinary = require("cloudinary").v2;
 
-router.get("/bookmark", isLoggedIn, async (req, res, next) => {
+router.get("/bookmark", async (req, res, next) => {
   try {
+<<<<<<< HEAD
     const {id} = req.user.dataValues;
+=======
+    const {id} = {id: 1};
+>>>>>>> cee8caef4298758ab313d0b217f917b302d84815
     const {page} = req.query;
     let bookMarkList = await db.sequelize.models.bookMark.findAndCountAll({
       where: {UserId: id},
@@ -76,9 +84,13 @@ router.get("/bookmark", isLoggedIn, async (req, res, next) => {
   }
 });
 
-router.get("/reviews", isLoggedIn, async (req, res, next) => {
+router.get("/reviews", async (req, res, next) => {
   try {
+<<<<<<< HEAD
     const {id} = req.user.dataValues;
+=======
+    const {id} = {id: 1};
+>>>>>>> cee8caef4298758ab313d0b217f917b302d84815
     const {page} = req.query;
     const listLength = await User.findAll({
       where: {id},
@@ -168,6 +180,10 @@ router.delete("/review", isLoggedIn, async (req, res, next) => {
 router.get("/review", isLoggedIn, async (req, res, next) => {
   try {
     const {id} = req.query;
+<<<<<<< HEAD
+=======
+    console.log(id);
+>>>>>>> cee8caef4298758ab313d0b217f917b302d84815
     const review = await Review.findOne({
       where: {id},
       include: [
@@ -198,9 +214,13 @@ router.get("/review", isLoggedIn, async (req, res, next) => {
   }
 });
 
-router.get("/post", isLoggedIn, async (req, res, next) => {
+router.get("/post", async (req, res, next) => {
   try {
+<<<<<<< HEAD
     const {id} = req.user.dataValues;
+=======
+    const {id} = {id: 1};
+>>>>>>> cee8caef4298758ab313d0b217f917b302d84815
     const {page} = req.query;
     const {count, rows} = await Post.findAndCountAll({
       where: {UserId: id},
@@ -243,9 +263,13 @@ router.get("/post", isLoggedIn, async (req, res, next) => {
   }
 });
 
-router.get("/comment", isLoggedIn, async (req, res, next) => {
+router.get("/comment", async (req, res, next) => {
   try {
+<<<<<<< HEAD
     const {id} = req.user.dataValues;
+=======
+    const {id} = {id: 1};
+>>>>>>> cee8caef4298758ab313d0b217f917b302d84815
     const {page} = req.query;
     const commentList = await Comment.findAndCountAll({
       where: {UserId: id},
