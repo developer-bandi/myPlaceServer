@@ -55,7 +55,7 @@ router.post(
 router.post(
   "/writestore",
   isLoggedIn,
-  upload.array("imgs[]"),
+  upload.fields([{name: "mainImg[]"}, {name: "menuImg[]"}]),
   async (req, res, next) => {
     try {
       const {name, tel, openingHours, address, latitude, longitude, category} =
@@ -72,12 +72,25 @@ router.post(
       });
 
       await Promise.all(
-        req.files.map((file) => {
-          return Photo.create({
-            filename: file.filename,
-            StoreId: createdStore.dataValues.id,
-          });
-        })
+        (req.files["mainImg[]"] === undefined ? [] : req.files["mainImg[]"])
+          .map((file) => {
+            return Photo.create({
+              filename: file.filename,
+              StoreId: createdStore.dataValues.id,
+              rep: 1,
+            });
+          })
+          .concat(
+            (req.files["menuImg[]"] === undefined
+              ? []
+              : req.files["menuImg[]"]
+            ).map((file) => {
+              return Photo.create({
+                filename: file.filename,
+                StoreId: createdStore.dataValues.id,
+              });
+            })
+          )
       );
 
       return res.send("ok");
@@ -92,7 +105,7 @@ router.post(
 router.patch(
   "/storeinfo",
   isLoggedIn,
-  upload.array("imgs[]"),
+  upload.fields([{name: "mainImg[]"}, {name: "menuImg[]"}]),
   async (req, res, next) => {
     try {
       const {id, name, tel, openingHours, category, deletedImg = []} = req.body;
@@ -105,15 +118,30 @@ router.patch(
         },
         {where: {id}}
       );
+      console.log(req.files["mainImg[]"]);
+      console.log(req.files["menuImg[]"]);
+      console.log(deletedImg);
 
       await Promise.all(
-        req.files
+        (req.files["mainImg[]"] === undefined ? [] : req.files["mainImg[]"])
           .map((file) => {
             return Photo.create({
               filename: file.filename,
               StoreId: id,
+              rep: 1,
             });
           })
+          .concat(
+            (req.files["menuImg[]"] === undefined
+              ? []
+              : req.files["menuImg[]"]
+            ).map((file) => {
+              return Photo.create({
+                filename: file.filename,
+                StoreId: id,
+              });
+            })
+          )
           .concat(
             deletedImg.map((file) => {
               return Photo.destroy({

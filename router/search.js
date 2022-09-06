@@ -209,7 +209,7 @@ router.post("/storeInfo", async (req, res, next) => {
         },
         {
           model: Photo,
-          attributes: ["filename"],
+          attributes: ["filename", "rep"],
         },
         {
           model: User,
@@ -254,14 +254,28 @@ router.post("/storeInfo", async (req, res, next) => {
         }),
       };
     });
-
     return res.send({
       bookmark: filter.length === 1 ? true : false,
       storeInfo,
       Reviews,
       hashtags,
-      Menus: store.Photos.map((photo) => {
-        return photo.dataValues.filename;
+      mainPhoto: store.Photos.filter((fileInfo) => {
+        if (fileInfo.dataValues.rep === 1) {
+          return true;
+        } else {
+          return false;
+        }
+      }).map((fileInfo) => {
+        return fileInfo.dataValues.filename;
+      })[0],
+      Menus: store.Photos.filter((fileInfo) => {
+        if (fileInfo.dataValues.rep === 0) {
+          return true;
+        } else {
+          return false;
+        }
+      }).map((fileInfo) => {
+        return fileInfo.dataValues.filename;
       }),
     });
   } catch (error) {
