@@ -67,6 +67,7 @@ router.get("/review", async (req, res, next) => {
     const {count, rows} = await Review.findAndCountAll({
       order: [["createdAt", "DESC"]],
       limit: 20,
+      distinct: true,
       include: [
         {
           model: Store,

@@ -9,6 +9,7 @@ const {Op} = require("sequelize");
 const {isLoggedIn} = require("./middlewares");
 const db = require("../models/index");
 const sanitizeHtml = require("sanitize-html");
+const Notice = require("../models/notice");
 const cloudinary = require("cloudinary").v2;
 
 router.get("/list", async (req, res, next) => {
@@ -268,18 +269,51 @@ router.post("/comment", isLoggedIn, async (req, res, next) => {
   const {PostId, content} = req.body;
   const {id, nickname} = req.user.dataValues;
   try {
-    const newComment = await Comment.create({
-      PostId,
-      content: sanitizeHtml(content),
-      UserId: id,
+    const [newComment, post] = await Promise.all([
+      Comment.create({
+        PostId,
+        content: sanitizeHtml(content),
+        UserId: id,
+      }),
+      Post.findOne({
+        where: {
+          id: PostId,
+        },
+        include: {
+          model: Comment,
+          include: {
+            model: User,
+          },
+        },
+      }),
+    ]);
+    console.log(post);
+    const preAlertIds = post.dataValues.Comments.map((comment) => {
+      return comment.dataValues.UserId;
     });
+    const alertIds = [];
+    for (let i = 0; i < preAlertIds.length; i++) {
+      if (preAlertIds[i] === id) continue;
+      if (alertIds.indexOf(preAlertIds[i]) === -1) {
+        alertIds.push(preAlertIds[i]);
+      }
+    }
+    await Promise.all(
+      alertIds.map((userId) => {
+        return Notice.create({
+          content: `${nickname}님이 "${post.dataValues.title}" 에 댓글을 작성하였습니다`,
+          PostId,
+          UserId: userId,
+        });
+      })
+    );
     delete newComment.dataValues.UserId;
     newComment.dataValues.User = {id, nickname};
     return res.send(newComment);
-  } catch (err) {
+  } catch (error) {
     console.error(error);
     res.status(403);
-    return next(err);
+    return next(error);
   }
 });
 
@@ -297,12 +331,11 @@ router.delete("/detail", isLoggedIn, async (req, res, next) => {
           },
         ],
       });
-      console.log(post);
+
       post.dataValues.Photos.map((filename) => {
         cloudinary.uploader.destroy(
           filename.dataValues.filename,
           function (result) {
-            console.log(result);
             Post.destroy({
               where: {id: PostId},
             });
@@ -337,14 +370,33 @@ router.delete("/comment", isLoggedIn, async (req, res, next) => {
 
 router.post("/likecount", isLoggedIn, async (req, res, next) => {
   const {PostId} = req.body;
-  const {id} = req.user.dataValues;
+  const {id, nickname} = req.user.dataValues;
   try {
-    await db.sequelize.models.likecount.create({
+    const [likedb, post] = await Promise.all([
+      db.sequelize.models.likecount.create({
+        PostId,
+        UserId: id,
+      }),
+      Post.findOne({
+        where: {
+          id: PostId,
+        },
+        attribute: ["id"],
+        include: [
+          {
+            model: User,
+            attributes: ["id"],
+          },
+        ],
+      }),
+    ]);
+    await Notice.create({
+      content: `${nickname}님이 "${post.dataValues.title}" 에 좋아요를 눌렀습니다`,
       PostId,
-      UserId: id,
+      UserId: post.User.dataValues.id,
     });
     return res.send("ok");
-  } catch (err) {
+  } catch (error) {
     console.error(error);
     res.status(403);
     return next(err);

@@ -28,7 +28,7 @@ router.post(
       await Promise.all(
         req.files
           .map((file) => {
-            return ReviewPhoto.create({
+            return Photo.create({
               filename: file.filename,
               ReviewId: createdReview.dataValues.id,
             });
