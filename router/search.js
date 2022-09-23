@@ -13,7 +13,6 @@ const {isLoggedIn} = require("./middlewares");
 router.post("/hashtagsearch", async (req, res, next) => {
   try {
     const {latitude, longitude, selectedHashtag} = req.body;
-    console.log(req.body);
     const hashtagStore = await Promise.all(
       selectedHashtag.map((hashtagName) => {
         return Store.findAll({

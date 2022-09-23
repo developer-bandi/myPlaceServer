@@ -18,7 +18,6 @@ router.post(
     try {
       const UserId = req.user.dataValues.id;
       const {StoreId, content, hashtags} = req.body;
-      console.log(content);
       const createdReview = await Review.create({
         content: content,
         StoreId: Number(StoreId),
@@ -118,9 +117,7 @@ router.patch(
         },
         {where: {id}}
       );
-      console.log(req.files["mainImg[]"]);
-      console.log(req.files["menuImg[]"]);
-      console.log(deletedImg);
+
 
       await Promise.all(
         (req.files["mainImg[]"] === undefined ? [] : req.files["mainImg[]"])
@@ -152,7 +149,7 @@ router.patch(
       );
       deletedImg.map((filename) => {
         cloudinary.uploader.destroy(filename, function (result) {
-          console.log(result);
+
         });
       });
 
@@ -256,7 +253,6 @@ router.patch(
       );
       deleteImg.map((filename) => {
         cloudinary.uploader.destroy(filename, function (result) {
-          console.log(result);
         });
       });
       return res.send("ok");

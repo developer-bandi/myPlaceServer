@@ -43,7 +43,6 @@ router.get("/list", async (req, res, next) => {
       rows.sort(function (a, b) {
         return b.dataValues.likelist.length - a.dataValues.likelist;
       });
-      console.log(rows);
       return res.send({
         count,
         rows: rows.splice((page - 1) * 10, page * 10).map((post) => {
@@ -287,7 +286,6 @@ router.post("/comment", isLoggedIn, async (req, res, next) => {
         },
       }),
     ]);
-    console.log(post);
     const preAlertIds = post.dataValues.Comments.map((comment) => {
       return comment.dataValues.UserId;
     });
@@ -432,7 +430,6 @@ router.post(
         content: sanitizeHtml(content),
         UserId: id,
       });
-      console.log(req.files);
       await Promise.all(
         req.files.map((file) => {
           return Photo.create({

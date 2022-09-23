@@ -34,7 +34,6 @@ router.get("/store", async (req, res, next) => {
         },
       ],
     });
-    console.log(storeTop10Arr[1].dataValues.Photos);
     const result = storeTop10Arr.map((data) => {
       return {
         id: data.dataValues.id,
@@ -83,7 +82,6 @@ router.get("/review", async (req, res, next) => {
         },
       ],
     });
-    console.log(rows);
 
     res.status(200);
     return res.send({

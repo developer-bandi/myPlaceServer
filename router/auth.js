@@ -44,7 +44,6 @@ router.get("/notice", async (req, res) => {
 
 router.patch("/notice", async (req, res) => {
   const {noticeId} = req.body;
-  console.log(noticeId);
   try {
     await Notice.update(
       {check: true},

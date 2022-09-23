@@ -76,7 +76,7 @@ router.get("/bookmark", isLoggedIn, async (req, res, next) => {
   }
 });
 
-router.get("/reviews", isLoggedIn, async (req, res, next) => {
+router.get("/reviews",isLoggedIn, async (req, res, next) => {
   try {
     const {id} = req.user.dataValues;
     const {page} = req.query;
@@ -90,28 +90,20 @@ router.get("/reviews", isLoggedIn, async (req, res, next) => {
         },
       ],
     });
-    const reviewList = await User.findOne({
-      where: {id},
-      attributes: ["id"],
+    const reviewList = await Review.findAll({
+      where: {UserId:id},
       include: [
-        {
-          model: Review,
-          include: [
             {model: Hashtag, attributes: ["id", "name"]},
             {model: Photo, attributes: ["filename"]},
             {model: Store, attributes: ["name"]},
           ],
-        },
-      ],
-      order: [[Review, "createdAt", "DESC"]],
+      order: [["createdAt", "DESC"]],
       limit: 20,
       offset: (page - 1) * 20,
-      subQuery: false,
     });
-    console.log(reviewList);
     return res.send({
       count: listLength[0].dataValues.Reviews[0].dataValues.count,
-      rows: reviewList.Reviews.map((review) => {
+      rows: reviewList.map((review) => {
         return {
           id: review.dataValues.id,
           content: review.dataValues.content,
@@ -149,7 +141,6 @@ router.delete("/review", isLoggedIn, async (req, res, next) => {
       cloudinary.uploader.destroy(
         filename.dataValues.filename,
         function (result) {
-          console.log(result);
         }
       );
     });
@@ -261,8 +252,6 @@ router.get("/comment", isLoggedIn, async (req, res, next) => {
         },
       ],
     });
-    console.log(commentList);
-    console.log(commentList.rows[0].User);
     return res.send({
       count: commentList.count,
       rows: commentList.rows.map((comment) => {
