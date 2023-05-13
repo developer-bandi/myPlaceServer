@@ -5,8 +5,8 @@ const Post = require("../models/post");
 const User = require("../models/user");
 const Comment = require("../models/comment");
 const Photo = require("../models/photo");
-const {Op} = require("sequelize");
-const {isLoggedIn} = require("./middlewares");
+const { Op } = require("sequelize");
+const { isLoggedIn } = require("./middlewares");
 const db = require("../models/index");
 const sanitizeHtml = require("sanitize-html");
 const Notice = require("../models/notice");
@@ -14,9 +14,9 @@ const cloudinary = require("cloudinary").v2;
 
 router.get("/list", async (req, res, next) => {
   try {
-    const {page, order} = req.query;
+    const { page, order } = req.query;
     if (order === "likeCount") {
-      const {count, rows} = await Post.findAndCountAll({
+      const { count, rows } = await Post.findAndCountAll({
         include: [
           {
             model: User,
@@ -59,7 +59,7 @@ router.get("/list", async (req, res, next) => {
         }),
       });
     }
-    const {count, rows} = await Post.findAndCountAll({
+    const { count, rows } = await Post.findAndCountAll({
       order: [[order, "DESC"]],
       limit: 10,
       offset: (page - 1) * 10,
@@ -81,7 +81,7 @@ router.get("/list", async (req, res, next) => {
     });
 
     res.status(200);
-    return res.send({
+    const a = {
       count,
       rows: rows.map((post) => {
         return {
@@ -95,7 +95,9 @@ router.get("/list", async (req, res, next) => {
           postlikecount: post.postlikecount.length,
         };
       }),
-    });
+    };
+    console.log(a);
+    return res.send(a);
   } catch (error) {
     console.error(error);
     res.status(403);
@@ -105,9 +107,9 @@ router.get("/list", async (req, res, next) => {
 
 router.get("/search", async (req, res, next) => {
   try {
-    const {keyword, page, order} = req.query;
+    const { keyword, page, order } = req.query;
     if (order === "likeCount") {
-      const {count, rows} = await Post.findAndCountAll({
+      const { count, rows } = await Post.findAndCountAll({
         where: {
           [Op.or]: [
             {
@@ -164,7 +166,7 @@ router.get("/search", async (req, res, next) => {
         }),
       });
     }
-    const {count, rows} = await Post.findAndCountAll({
+    const { count, rows } = await Post.findAndCountAll({
       where: {
         [Op.or]: [
           {
@@ -224,8 +226,8 @@ router.get("/search", async (req, res, next) => {
 
 router.get("/detail", async (req, res, next) => {
   try {
-    const {id} = req.query;
-    await Post.increment({viewCount: 1}, {where: {id}});
+    const { id } = req.query;
+    await Post.increment({ viewCount: 1 }, { where: { id } });
     const result = await Post.findOne({
       where: {
         id,
@@ -237,7 +239,7 @@ router.get("/detail", async (req, res, next) => {
         },
         {
           model: Comment,
-          include: [{model: User, attributes: ["nickname", "id"]}],
+          include: [{ model: User, attributes: ["nickname", "id"] }],
         },
         {
           model: User,
@@ -251,10 +253,16 @@ router.get("/detail", async (req, res, next) => {
       ],
     });
 
-    result.dataValues.likelist = result.dataValues.postlikecount.map((data) => {
-      return data.dataValues.id;
-    });
+    result.dataValues.likelist = result.dataValues.postlikecount.map(
+      (data) => data.dataValues.id
+    );
 
+    result.dataValues.photos = result.dataValues.Photos.map(
+      (data) => data.dataValues.filename
+    );
+
+    delete result.dataValues.postlikecount;
+    console.log(result);
     res.status(200);
     return res.send(result);
   } catch (error) {
@@ -265,8 +273,8 @@ router.get("/detail", async (req, res, next) => {
 });
 
 router.post("/comment", isLoggedIn, async (req, res, next) => {
-  const {PostId, content} = req.body;
-  const {id, nickname} = req.user.dataValues;
+  const { PostId, content } = req.body;
+  const { id, nickname } = req.user.dataValues;
   try {
     const [newComment, post] = await Promise.all([
       Comment.create({
@@ -306,7 +314,7 @@ router.post("/comment", isLoggedIn, async (req, res, next) => {
       })
     );
     delete newComment.dataValues.UserId;
-    newComment.dataValues.User = {id, nickname};
+    newComment.dataValues.User = { id, nickname };
     return res.send(newComment);
   } catch (error) {
     console.error(error);
@@ -316,12 +324,12 @@ router.post("/comment", isLoggedIn, async (req, res, next) => {
 });
 
 router.delete("/detail", isLoggedIn, async (req, res, next) => {
-  const {PostId, UserId} = req.body;
-  const {id} = req.user.dataValues;
+  const { PostId, UserId } = req.body;
+  const { id } = req.user.dataValues;
   try {
     if (id === UserId) {
       const post = await Post.findOne({
-        where: {id: PostId},
+        where: { id: PostId },
         include: [
           {
             model: Photo,
@@ -335,7 +343,7 @@ router.delete("/detail", isLoggedIn, async (req, res, next) => {
           filename.dataValues.filename,
           function (result) {
             Post.destroy({
-              where: {id: PostId},
+              where: { id: PostId },
             });
             return res.send("ok");
           }
@@ -350,12 +358,12 @@ router.delete("/detail", isLoggedIn, async (req, res, next) => {
 });
 
 router.delete("/comment", isLoggedIn, async (req, res, next) => {
-  const {CommentId, UserId} = req.body;
-  const {id} = req.user.dataValues;
+  const { CommentId, UserId } = req.body;
+  const { id } = req.user.dataValues;
   try {
     if (id === UserId) {
       await Comment.destroy({
-        where: {id: CommentId},
+        where: { id: CommentId },
       });
     }
     return res.send("ok");
@@ -367,8 +375,9 @@ router.delete("/comment", isLoggedIn, async (req, res, next) => {
 });
 
 router.post("/likecount", isLoggedIn, async (req, res, next) => {
-  const {PostId} = req.body;
-  const {id, nickname} = req.user.dataValues;
+  const { PostId } = req.body;
+  const { id, nickname } = req.user.dataValues;
+
   try {
     const [likedb, post] = await Promise.all([
       db.sequelize.models.likecount.create({
@@ -388,11 +397,16 @@ router.post("/likecount", isLoggedIn, async (req, res, next) => {
         ],
       }),
     ]);
-    await Notice.create({
-      content: `${nickname}님이 "${post.dataValues.title}" 에 좋아요를 눌렀습니다`,
-      PostId,
-      UserId: post.User.dataValues.id,
-    });
+    if (post.User.dataValues.id !== id) {
+      await Notice.create({
+        content: `${nickname}님이 "${post.dataValues.title.replace(
+          /\"/g,
+          ""
+        )}" 에 좋아요를 눌렀습니다`,
+        PostId,
+        UserId: post.User.dataValues.id,
+      });
+    }
     return res.send("ok");
   } catch (error) {
     console.error(error);
@@ -402,11 +416,12 @@ router.post("/likecount", isLoggedIn, async (req, res, next) => {
 });
 
 router.delete("/likecount", isLoggedIn, async (req, res, next) => {
-  const {PostId} = req.body;
-  const {id} = req.user.dataValues;
+  const { PostId } = req.body;
+  const { id } = req.user.dataValues;
+  console.log(id);
   try {
     await db.sequelize.models.likecount.destroy({
-      where: {UserId: id, PostId},
+      where: { UserId: id, PostId },
     });
 
     return res.send("ok");
@@ -422,8 +437,9 @@ router.post(
   isLoggedIn,
   upload.array("imgs[]"),
   async (req, res, next) => {
-    const {title, content} = req.body;
-    const {id} = req.user.dataValues;
+    const { title, content } = req.body;
+
+    const { id } = req.user.dataValues;
     try {
       const newPost = await Post.create({
         title,

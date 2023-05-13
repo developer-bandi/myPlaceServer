@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <ul id="container">
+      <li data-item="item1">아이템1</li>
+      <li data-item="item2">아이템2</li>
+      <li data-item="item3">아이템3</li>
+      <li data-item="item4">아이템4</li>
+    </ul>
+    <script>
+      const listHander = {
+        item1: () => alert("아이템1입니다!"),
+        item2: () => alert("아이템2입니다!"),
+        item3: () => alert("아이템3입니다!"),
+        item4: () => alert("아이템4입니다!"),
+      };
+      const doSomething = (event) => {
+        let action = event.target.dataset.item;
+        if (action) {
+          listHander[action]();
+        }
+      };
+      document
+        .querySelector("#container")
+        .addEventListener("click", doSomething);
+    </script>
+  </body>
+</html>

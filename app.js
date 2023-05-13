@@ -6,7 +6,7 @@ const session = require("express-session");
 const dotenv = require("dotenv");
 const passport = require("passport");
 const cors = require("cors");
-const {sequelize} = require("./models");
+const { sequelize } = require("./models");
 const passportConfig = require("./passport");
 const hashtagRouter = require("./router/hashtag");
 const authRouter = require("./router/auth");
@@ -32,7 +32,7 @@ passportConfig();
 app.set("port", process.env.PORT || 8001);
 
 sequelize
-  .sync({force: false})
+  .sync({ force: false })
   .then(() => {
     console.log("데이터베이스 연결 성공");
   })
@@ -40,15 +40,15 @@ sequelize
     console.error(error);
   });
 
-app.use(cors({credentials: true, origin: process.env.FRONT_URL}));
+app.use(cors({ credentials: true, origin: process.env.FRONT_URL }));
 app.use(morgan("combin"));
 app.use(hpp());
 app.use(
-  helmet({contentSecurityPolicy: false, crossOriginResourcePolicy: false})
+  helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false })
 );
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
-app.use(express.urlencoded({extended: false}));
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use(
@@ -57,17 +57,11 @@ app.use(
     saveUninitialized: false,
     secret: process.env.COOKIE_SECRET,
     proxy: true,
-    cookie:
-      process.env.NODE_ENV === "production"
-        ? {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-          }
-        : {httpOnly: true, secure: false},
-    store: new RedisStore({client: redisClient}),
+    cookie: { httpOnly: true, secure: false },
+    store: new RedisStore({ client: redisClient }),
   })
 );
+
 app.use(passport.initialize());
 app.use(passport.session());
 

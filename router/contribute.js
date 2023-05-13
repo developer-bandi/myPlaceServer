@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../lib/multer");
-const {isLoggedIn} = require("./middlewares");
+const { isLoggedIn } = require("./middlewares");
 const Review = require("../models/review");
 const Photo = require("../models/photo");
 const Store = require("../models/store");
@@ -17,7 +17,7 @@ router.post(
   async (req, res, next) => {
     try {
       const UserId = req.user.dataValues.id;
-      const {StoreId, content, hashtags} = req.body;
+      const { StoreId, content, hashtags } = req.body;
       const createdReview = await Review.create({
         content: content,
         StoreId: Number(StoreId),
@@ -54,11 +54,20 @@ router.post(
 router.post(
   "/writestore",
   isLoggedIn,
-  upload.fields([{name: "mainImg[]"}, {name: "menuImg[]"}]),
+  upload.fields([{ name: "mainImg[]" }, { name: "menuImg[]" }]),
   async (req, res, next) => {
+    console.log(req.files["mainImg[]"]);
+    console.log(req.files["menuImg[]"]);
     try {
-      const {name, tel, openingHours, address, latitude, longitude, category} =
-        req.body;
+      const {
+        name,
+        tel,
+        openingHours,
+        address,
+        latitude,
+        longitude,
+        category,
+      } = req.body;
 
       const createdStore = await Store.create({
         name: sanitizeHtml(name),
@@ -104,10 +113,17 @@ router.post(
 router.patch(
   "/storeinfo",
   isLoggedIn,
-  upload.fields([{name: "mainImg[]"}, {name: "menuImg[]"}]),
+  upload.fields([{ name: "mainImg[]" }, { name: "menuImg[]" }]),
   async (req, res, next) => {
     try {
-      const {id, name, tel, openingHours, category, deletedImg = []} = req.body;
+      const {
+        id,
+        name,
+        tel,
+        openingHours,
+        category,
+        deletedImg = [],
+      } = req.body;
       const createdStore = await Store.update(
         {
           name: sanitizeHtml(name),
@@ -115,9 +131,8 @@ router.patch(
           openingHours: sanitizeHtml(openingHours),
           category,
         },
-        {where: {id}}
+        { where: { id } }
       );
-
 
       await Promise.all(
         (req.files["mainImg[]"] === undefined ? [] : req.files["mainImg[]"])
@@ -142,15 +157,13 @@ router.patch(
           .concat(
             deletedImg.map((file) => {
               return Photo.destroy({
-                where: {filename: file},
+                where: { filename: file },
               });
             })
           )
       );
       deletedImg.map((filename) => {
-        cloudinary.uploader.destroy(filename, function (result) {
-
-        });
+        cloudinary.uploader.destroy(filename, function (result) {});
       });
 
       return res.send("ok");
@@ -164,7 +177,7 @@ router.patch(
 
 router.patch("/storeposition", isLoggedIn, async (req, res, next) => {
   try {
-    const {id, latitude, longitude, address} = req.body;
+    const { id, latitude, longitude, address } = req.body;
     await Store.update(
       {
         latitude,
@@ -172,7 +185,7 @@ router.patch("/storeposition", isLoggedIn, async (req, res, next) => {
         address,
       },
       {
-        where: {id},
+        where: { id },
       }
     );
 
@@ -198,12 +211,12 @@ router.patch(
         content,
       } = req.body;
       const HashtagIddata1 = await Hashtag.findAll({
-        where: {name: deleteHashtag},
+        where: { name: deleteHashtag },
         attributes: ["id"],
       });
 
       const HashtagIddata2 = await Hashtag.findAll({
-        where: {name: addHashtag},
+        where: { name: addHashtag },
         attributes: ["id"],
       });
 
@@ -233,7 +246,7 @@ router.patch(
           .concat(
             deleteImg.map((file) => {
               return Photo.destroy({
-                where: {filename: file},
+                where: { filename: file },
               });
             })
           )
@@ -248,12 +261,14 @@ router.patch(
             })
           )
           .concat([
-            Review.update({content: sanitizeHtml(content)}, {where: {id}}),
+            Review.update(
+              { content: sanitizeHtml(content) },
+              { where: { id } }
+            ),
           ])
       );
       deleteImg.map((filename) => {
-        cloudinary.uploader.destroy(filename, function (result) {
-        });
+        cloudinary.uploader.destroy(filename, function (result) {});
       });
       return res.send("ok");
     } catch (error) {

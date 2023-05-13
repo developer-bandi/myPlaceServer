@@ -1,5 +1,5 @@
 const express = require("express");
-const {Store, Photo, Review, User, Banner, Hashtag} = require("../models");
+const { Store, Photo, Review, User, Banner, Hashtag } = require("../models");
 const router = express.Router();
 
 router.get("/banner", async (req, res, next) => {
@@ -63,9 +63,11 @@ router.get("/store", async (req, res, next) => {
 
 router.get("/review", async (req, res, next) => {
   try {
-    const {count, rows} = await Review.findAndCountAll({
+    const { page } = req.query;
+    const { count, rows } = await Review.findAndCountAll({
       order: [["createdAt", "DESC"]],
-      limit: 20,
+      limit: 10,
+      offset: (page - 1) * 10,
       distinct: true,
       include: [
         {

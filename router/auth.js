@@ -1,13 +1,13 @@
 const express = require("express");
 const passport = require("passport");
 const bcrypt = require("bcrypt");
-const {isLoggedIn, isNotLoggedIn} = require("./middlewares");
+const { isLoggedIn, isNotLoggedIn } = require("./middlewares");
 const User = require("../models/user");
 const crypto = require("crypto-js");
 const router = express.Router();
 const mailer = require("../lib/mail");
 const sanitizeHtml = require("sanitize-html");
-const {Notice} = require("../models");
+const { Notice } = require("../models");
 
 router.get("/logincheck", async (req, res) => {
   try {
@@ -15,7 +15,7 @@ router.get("/logincheck", async (req, res) => {
       res.status(203);
       return res.send("로그인되지 않음");
     }
-    const {id, nickname} = req.user.dataValues;
+    const { id, nickname } = req.user.dataValues;
     res.status(200);
     return res.send({
       id,
@@ -28,11 +28,11 @@ router.get("/logincheck", async (req, res) => {
   }
 });
 
-router.get("/notice", async (req, res) => {
-  const {id} = {id: 1}; //req.user.dataValues;
+router.get("/notice", isLoggedIn, async (req, res) => {
+  const { id } = req.user.dataValues;
   try {
     const notices = await Notice.findAll({
-      where: {UserId: id},
+      where: { UserId: id },
     });
     return res.send(notices);
   } catch (error) {
@@ -43,12 +43,12 @@ router.get("/notice", async (req, res) => {
 });
 
 router.patch("/notice", async (req, res) => {
-  const {noticeId} = req.body;
+  const { noticeId } = req.body;
   try {
     await Notice.update(
-      {check: true},
+      { check: true },
       {
-        where: {id: noticeId},
+        where: { id: noticeId },
       }
     );
     return res.send("ok");
@@ -60,12 +60,12 @@ router.patch("/notice", async (req, res) => {
 });
 
 router.post("/join", isNotLoggedIn, async (req, res, next) => {
-  const {localId, nickname, password, email} = req.body;
+  const { localId, nickname, password, email } = req.body;
   try {
     const exUser = await Promise.all([
-      User.findOne({where: {localId: sanitizeHtml(localId)}}),
-      User.findOne({where: {nickname: sanitizeHtml(nickname)}}),
-      User.findOne({where: {email: sanitizeHtml(email)}}),
+      User.findOne({ where: { localId: sanitizeHtml(localId) } }),
+      User.findOne({ where: { nickname: sanitizeHtml(nickname) } }),
+      User.findOne({ where: { email: sanitizeHtml(email) } }),
     ]);
     if (exUser[0] && exUser[1] && exUser[2]) {
       res.status(203);
@@ -109,7 +109,7 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
       password: passwordHash,
       email,
     });
-    res.status(201);
+    res.status(200);
     return res.send("회원가입에 성공하였습니다");
   } catch (error) {
     console.error(error);
@@ -161,7 +161,7 @@ router.get(
   }
 );
 
-router.get("/naver", passport.authenticate("naver", {authType: "reprompt"}));
+router.get("/naver", passport.authenticate("naver", { authType: "reprompt" }));
 
 router.get(
   "/naver/callback",
@@ -174,13 +174,13 @@ router.get(
   }
 );
 
-router.post("/id", async (req, res, next) => {
+router.post("/id", isLoggedIn, async (req, res, next) => {
   try {
     const randomNumber =
       Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
     const email = sanitizeHtml(req.body.email);
     const user = await User.findOne({
-      where: {email: email},
+      where: { email: email },
       attributes: ["localId"],
     });
     if (user) {
@@ -211,9 +211,9 @@ router.post("/id", async (req, res, next) => {
   }
 });
 
-router.post("/password", async (req, res, next) => {
+router.post("/password", isLoggedIn, async (req, res, next) => {
   try {
-    const {email, newPassword} = req.body;
+    const { email, newPassword } = req.body;
     const newpasswordBytes = crypto.AES.decrypt(
       newPassword,
       process.env.PASSWORD_SECRET
@@ -221,9 +221,9 @@ router.post("/password", async (req, res, next) => {
     const newpasswordDecrypted = newpasswordBytes.toString(crypto.enc.Utf8);
     const newpasswordHash = await bcrypt.hash(newpasswordDecrypted, 12);
     await User.update(
-      {password: newpasswordHash},
+      { password: newpasswordHash },
       {
-        where: {email},
+        where: { email },
       }
     );
     return res.send("ok");
@@ -235,14 +235,14 @@ router.post("/password", async (req, res, next) => {
 });
 
 router.patch("/password", isLoggedIn, async (req, res, next) => {
-  const {password, newPassword} = req.body;
+  const { password, newPassword } = req.body;
   const passwordBytes = crypto.AES.decrypt(
     password,
     process.env.PASSWORD_SECRET
   );
   const passwordDecrypted = passwordBytes.toString(crypto.enc.Utf8);
   const user = await User.findOne({
-    where: {id: req.user.dataValues.id},
+    where: { id: req.user.dataValues.id },
   });
   const result = await bcrypt.compare(
     passwordDecrypted,
@@ -256,9 +256,9 @@ router.patch("/password", isLoggedIn, async (req, res, next) => {
     const newpasswordDecrypted = newpasswordBytes.toString(crypto.enc.Utf8);
     const newpasswordHash = await bcrypt.hash(newpasswordDecrypted, 12);
     await User.update(
-      {password: newpasswordHash},
+      { password: newpasswordHash },
       {
-        where: {id: req.user.dataValues.id},
+        where: { id: req.user.dataValues.id },
       }
     );
     return res.send("ok");
@@ -271,8 +271,8 @@ router.patch("/password", isLoggedIn, async (req, res, next) => {
 
 router.delete("/user", isLoggedIn, async (req, res, next) => {
   try {
-    const id = 2;
-    await User.destroy({where: {id}});
+    const id = req.user.dataValues;
+    await User.destroy({ where: { id } });
     return res.send("ok");
   } catch (error) {
     console.error(error);

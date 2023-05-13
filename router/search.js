@@ -6,13 +6,13 @@ const Hashtag = require("../models/hashtag");
 const Photo = require("../models/photo");
 const User = require("../models/user");
 const db = require("../models/index");
-const {Op} = require("sequelize");
+const { Op } = require("sequelize");
 const getDistance = require("../lib/distance");
-const {isLoggedIn} = require("./middlewares");
+const { isLoggedIn } = require("./middlewares");
 
 router.post("/hashtagsearch", async (req, res, next) => {
   try {
-    const {latitude, longitude, selectedHashtag} = req.body;
+    const { latitude, longitude, selectedHashtag } = req.body;
     const hashtagStore = await Promise.all(
       selectedHashtag.map((hashtagName) => {
         return Store.findAll({
@@ -110,7 +110,7 @@ router.post("/hashtagsearch", async (req, res, next) => {
 
 router.post("/namesearch", async (req, res) => {
   try {
-    const {latitude, longitude, searchKeyword} = req.body;
+    const { latitude, longitude, searchKeyword } = req.body;
     const stores = await Store.findAll({
       where: {
         name: {
@@ -174,7 +174,7 @@ router.post("/storeInfo", async (req, res, next) => {
   try {
     const id = req.user === undefined ? null : req.user.dataValues.id;
     const store = await Store.findOne({
-      where: {id: req.body.storeId},
+      where: { id: req.body.storeId },
       attributes: [
         "id",
         "name",
@@ -216,7 +216,7 @@ router.post("/storeInfo", async (req, res, next) => {
         },
       ],
     });
-    await store.increment("viewCount", {by: 1});
+    await store.increment("viewCount", { by: 1 });
     const filter = store.dataValues.storebookMark.filter((bookmark) => {
       if (bookmark.dataValues.id == id) {
         return true;
@@ -286,10 +286,10 @@ router.post("/storeInfo", async (req, res, next) => {
 
 router.post("/bookmark", isLoggedIn, async (req, res, next) => {
   try {
-    const {StoreId} = req.body;
+    const { storeId } = req.body;
     if (req.user) {
       await db.sequelize.models.bookMark.create({
-        StoreId,
+        StoreId: storeId,
         UserId: req.user.dataValues.id,
       });
     }
@@ -303,10 +303,10 @@ router.post("/bookmark", isLoggedIn, async (req, res, next) => {
 
 router.delete("/bookmark", isLoggedIn, async (req, res, next) => {
   try {
-    const {StoreId} = req.body;
+    const { storeId } = req.body;
     if (req.user) {
       await db.sequelize.models.bookMark.destroy({
-        where: {StoreId, UserId: req.user.dataValues.id},
+        where: { StoreId: storeId, UserId: req.user.dataValues.id },
       });
     }
     res.send("ok");

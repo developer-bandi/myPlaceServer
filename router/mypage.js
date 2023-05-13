@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {isLoggedIn} = require("./middlewares");
+const { isLoggedIn } = require("./middlewares");
 const User = require("../models/user");
 const Store = require("../models/store");
 const Review = require("../models/review");
@@ -10,16 +10,16 @@ const Post = require("../models/post");
 const Comment = require("../models/comment");
 const sanitizeHtml = require("sanitize-html");
 const db = require("../models");
-const {Op} = require("sequelize");
+const { Op } = require("sequelize");
 const sequelize = require("sequelize");
 const cloudinary = require("cloudinary").v2;
 
 router.get("/bookmark", isLoggedIn, async (req, res, next) => {
   try {
-    const {id} = req.user.dataValues;
-    const {page} = req.query;
+    const { id } = req.user.dataValues;
+    const { page } = req.query;
     let bookMarkList = await db.sequelize.models.bookMark.findAndCountAll({
-      where: {UserId: id},
+      where: { UserId: id },
       attributes: ["StoreId"],
       order: [["createdAt", "DESC"]],
       limit: 24,
@@ -31,7 +31,7 @@ router.get("/bookmark", isLoggedIn, async (req, res, next) => {
     });
 
     const bookMarkDataList = await Store.findAll({
-      where: {id: {[Op.or]: bookMarkList.rows}},
+      where: { id: { [Op.or]: bookMarkList.rows } },
       include: [
         {
           model: Photo,
@@ -47,7 +47,7 @@ router.get("/bookmark", isLoggedIn, async (req, res, next) => {
     });
 
     bookMarkDataList.map((bookmark) => {
-      const {id, name, category, address, latitude, longitude, viewCount} =
+      const { id, name, category, address, latitude, longitude, viewCount } =
         bookmark.dataValues;
       bookMarkList.rows[bookMarkList.rows.indexOf(id)] = {
         id,
@@ -76,12 +76,12 @@ router.get("/bookmark", isLoggedIn, async (req, res, next) => {
   }
 });
 
-router.get("/reviews",isLoggedIn, async (req, res, next) => {
+router.get("/reviews", isLoggedIn, async (req, res, next) => {
   try {
-    const {id} = req.user.dataValues;
-    const {page} = req.query;
+    const { id } = req.user.dataValues;
+    const { page } = req.query;
     const listLength = await User.findAll({
-      where: {id},
+      where: { id },
       attributes: [],
       include: [
         {
@@ -90,17 +90,24 @@ router.get("/reviews",isLoggedIn, async (req, res, next) => {
         },
       ],
     });
+    console.log(listLength);
     const reviewList = await Review.findAll({
-      where: {UserId:id},
+      where: { UserId: id },
       include: [
-            {model: Hashtag, attributes: ["id", "name"]},
-            {model: Photo, attributes: ["filename"]},
-            {model: Store, attributes: ["name"]},
-          ],
+        { model: Hashtag, attributes: ["id", "name"] },
+        { model: Photo, attributes: ["filename"] },
+        { model: Store, attributes: ["name"] },
+      ],
       order: [["createdAt", "DESC"]],
       limit: 20,
       offset: (page - 1) * 20,
     });
+    if (listLength[0].dataValues.Reviews.length === 0) {
+      return res.send({
+        count: 0,
+        rows: [],
+      });
+    }
     return res.send({
       count: listLength[0].dataValues.Reviews[0].dataValues.count,
       rows: reviewList.map((review) => {
@@ -127,9 +134,9 @@ router.get("/reviews",isLoggedIn, async (req, res, next) => {
 
 router.delete("/review", isLoggedIn, async (req, res, next) => {
   try {
-    const {id} = req.body;
+    const { id } = req.body;
     const photos = await Review.findOne({
-      where: {id},
+      where: { id },
       include: [
         {
           model: Photo,
@@ -140,13 +147,12 @@ router.delete("/review", isLoggedIn, async (req, res, next) => {
     photos.dataValues.Photos.map((filename) => {
       cloudinary.uploader.destroy(
         filename.dataValues.filename,
-        function (result) {
-        }
+        function (result) {}
       );
     });
 
     await Review.destroy({
-      where: {id},
+      where: { id },
     });
     return res.send("ok");
   } catch (error) {
@@ -158,13 +164,13 @@ router.delete("/review", isLoggedIn, async (req, res, next) => {
 
 router.get("/review", isLoggedIn, async (req, res, next) => {
   try {
-    const {id} = req.query;
+    const { id } = req.query;
     const review = await Review.findOne({
-      where: {id},
+      where: { id },
       include: [
-        {model: Hashtag, attributes: ["id", "name"]},
-        {model: Photo, attributes: ["filename"]},
-        {model: Store, attributes: ["name", "category", "address"]},
+        { model: Hashtag, attributes: ["id", "name"] },
+        { model: Photo, attributes: ["filename"] },
+        { model: Store, attributes: ["name", "category", "address"] },
       ],
     });
     return res.send({
@@ -191,10 +197,10 @@ router.get("/review", isLoggedIn, async (req, res, next) => {
 
 router.get("/post", isLoggedIn, async (req, res, next) => {
   try {
-    const {id} = req.user.dataValues;
-    const {page} = req.query;
-    const {count, rows} = await Post.findAndCountAll({
-      where: {UserId: id},
+    const { id } = req.user.dataValues;
+    const { page } = req.query;
+    const { count, rows } = await Post.findAndCountAll({
+      where: { UserId: id },
       order: [["createdAt", "DESC"]],
       limit: 20,
       offset: (page - 1) * 20,
@@ -209,7 +215,7 @@ router.get("/post", isLoggedIn, async (req, res, next) => {
           model: User,
           attributes: ["nickname"],
         },
-        {model: Comment},
+        { model: Comment },
       ],
     });
     return res.send({
@@ -236,10 +242,10 @@ router.get("/post", isLoggedIn, async (req, res, next) => {
 
 router.get("/comment", isLoggedIn, async (req, res, next) => {
   try {
-    const {id} = req.user.dataValues;
-    const {page} = req.query;
+    const { id } = req.user.dataValues;
+    const { page } = req.query;
     const commentList = await Comment.findAndCountAll({
-      where: {UserId: id},
+      where: { UserId: id },
       order: [["createdAt", "DESC"]],
       limit: 20,
       offset: (page - 1) * 20,
@@ -273,9 +279,9 @@ router.get("/comment", isLoggedIn, async (req, res, next) => {
 
 router.get("/info", isLoggedIn, async (req, res, next) => {
   try {
-    const {id} = req.user.dataValues;
+    const { id } = req.user.dataValues;
     const userInfo = await User.findOne({
-      where: {id},
+      where: { id },
       attributes: ["localId", "nickname", "provider", "createdAt", "email"],
     });
     return res.send(userInfo);
@@ -289,12 +295,12 @@ router.get("/info", isLoggedIn, async (req, res, next) => {
 router.patch("/nickname", isLoggedIn, async (req, res, next) => {
   try {
     const nickname = sanitizeHtml(req.body.nickname);
-    const {id} = req.user.dataValues;
+    const { id } = req.user.dataValues;
     const newUserInfo = await User.update(
       {
         nickname,
       },
-      {where: {id}}
+      { where: { id } }
     );
     return res.send(newUserInfo);
   } catch (error) {
